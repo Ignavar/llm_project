@@ -1,5 +1,4 @@
-Package                              Version
------------------------------------- -----------
+accelerate                           1.13.0
 action-msgs                          2.0.3
 action-tutorials-interfaces          0.33.9
 action-tutorials-py                  0.33.9
@@ -51,7 +50,7 @@ h11                                  0.16.0
 hf-xet                               1.3.2
 httpcore                             1.0.9
 httpx                                0.28.1
-huggingface_hub                      1.5.0
+huggingface_hub                      1.6.0
 idna                                 3.11
 image-geometry                       4.1.0
 interactive-markers                  2.5.5
@@ -99,6 +98,7 @@ pandas                               3.0.1
 pcl-msgs                             1.0.0
 pendulum-msgs                        0.33.9
 pip                                  24.0
+psutil                               7.2.2
 Pygments                             2.19.2
 python-dateutil                      2.9.0.post0
 python-qt-binding                    2.2.2
