@@ -1,7 +1,6 @@
 import torch
 import faiss
 import pickle
-import numpy as np
 from sentence_transformers import SentenceTransformer
 from transformers import AutoModelForCausalLM, AutoTokenizer, pipeline
 
