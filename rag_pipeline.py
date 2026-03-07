@@ -6,7 +6,6 @@ from sentence_transformers import SentenceTransformer
 from transformers import AutoModelForCausalLM, AutoTokenizer, pipeline
 
 def load_retrieval_system():
-    """Loads the embedding model, FAISS index, and metadata."""
     print("Loading embedding model...")
     embedder = SentenceTransformer('all-MiniLM-L6-v2')
     
@@ -18,12 +17,10 @@ def load_retrieval_system():
     return embedder, index, metadata
 
 def load_llm():
-    """Loads the Qwen2.5 3B Instruct model."""
     print("Loading Qwen2.5-3B-Instruct... This may take a moment.")
     model_id = "Qwen/Qwen2.5-3B-Instruct"
     
     tokenizer = AutoTokenizer.from_pretrained(model_id)
-    # Using device_map="auto" to efficiently utilize available GPU/CPU memory
     model = AutoModelForCausalLM.from_pretrained(
         model_id, 
         torch_dtype=torch.float16, 
@@ -34,32 +31,43 @@ def load_llm():
         "text-generation",
         model=model,
         tokenizer=tokenizer,
-        max_new_tokens=256,
-        temperature=0.3, # Low temperature for more factual, less creative answers
+        max_new_tokens=512, # Increased from 256 to allow fuller answers
+        temperature=0.2,    # Lowered slightly for more factual extraction
         repetition_penalty=1.1
     )
     return pipe
 
-def retrieve_context(query, embedder, index, metadata, top_k=3):
-    """Embeds the query and fetches the most relevant document chunks."""
+def retrieve_context(query, embedder, index, metadata, top_k=6, distance_threshold=1.5):
+    """Embeds query, fetches top_k chunks, and filters out poor matches using distance."""
     query_vector = embedder.encode([query]).astype('float32')
     distances, indices = index.search(query_vector, top_k)
     
     retrieved_texts = []
-    for idx in indices[0]:
-        if idx != -1: # Ensure valid index
-            retrieved_texts.append(metadata[idx]['content'])
+    
+    print("\n--- Retrieval Diagnostics ---")
+    # Zip distances and indices to evaluate each chunk individually
+    for dist, idx in zip(distances[0], indices[0]):
+        if idx != -1:
+            print(f"Match Distance: {dist:.4f} | Source: {metadata[idx].get('source_sheet', 'Unknown')}")
             
+            # Only append the context if the distance is below our noise threshold
+            if dist <= distance_threshold:
+                retrieved_texts.append(metadata[idx]['content'])
+    print("-----------------------------\n")
+                
+    # Fallback: If the threshold filtered everything out, return at least the absolute best match
+    if not retrieved_texts and indices[0][0] != -1:
+        retrieved_texts.append(metadata[indices[0][0]]['content'])
+             
     return "\n---\n".join(retrieved_texts)
 
 def generate_answer(query, context, llm_pipeline):
-    """Constructs the prompt and generates the final response."""
-    # Strict prompt engineering to handle domain boundaries and tone
     system_prompt = (
         "You are a helpful, caring, and reliable customer service assistant for a local bank. "
-        "Use ONLY the provided context to answer the user's question. "
-        "If the answer is not contained in the context, politely state that you do not have that "
-        "information and offer to connect them with a human representative. Do not guess or make up information."
+        "Analyze the provided context carefully to answer the user's question. "
+        "If the answer is present in the context, provide a clear, concise response. "
+        "If the context does not contain the answer, politely state: 'I apologize, but I don't have that specific information right now. Let me connect you with a human representative.' "
+        "Never make up information or guess."
     )
     
     user_prompt = f"Context:\n{context}\n\nQuestion: {query}"
@@ -69,21 +77,18 @@ def generate_answer(query, context, llm_pipeline):
         {"role": "user", "content": user_prompt}
     ]
     
-    # Let the tokenizer handle the chat template for Qwen
     prompt = llm_pipeline.tokenizer.apply_chat_template(
         messages, tokenize=False, add_generation_prompt=True
     )
     
-    print("\nGenerating response...")
+    print("Generating response...")
     outputs = llm_pipeline(prompt)
     
-    # Extract just the generated text (ignoring the prompt)
     generated_text = outputs[0]["generated_text"]
     response = generated_text.split("<|im_start|>assistant\n")[-1].strip()
     return response
 
 if __name__ == "__main__":
-    # Initialize the system
     embedder, index, metadata = load_retrieval_system()
     llm_pipeline = load_llm()
     
@@ -91,7 +96,6 @@ if __name__ == "__main__":
     print("Bank Assistant Prototype Initialized!")
     print("="*50)
     
-    # Interactive loop for the terminal prototype
     while True:
         user_query = input("\nYou: ")
         if user_query.lower() in ['quit', 'exit']:
