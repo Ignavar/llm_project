@@ -2,7 +2,7 @@ import torch
 import faiss
 import pickle
 from sentence_transformers import SentenceTransformer
-from transformers import AutoModelForCausalLM, AutoTokenizer, pipeline
+from transformers import AutoModelForCausalLM, AutoTokenizer, pipeline, BitsAndBytesConfig
 
 # Global variables to hold our loaded models in memory
 embedder = None
@@ -14,6 +14,13 @@ def initialize_system():
     """Loads all models and databases into memory."""
     global embedder, index, metadata, llm_pipeline
     
+    # --- THE FIX: The Singleton Guard ---
+    # If the pipeline already exists, stop and don't load it again!
+    if llm_pipeline is not None:
+        print("Backend already initialized. Skipping duplicate load.")
+        return
+    # ------------------------------------
+    
     print("Loading embedding model...")
     embedder = SentenceTransformer('all-MiniLM-L6-v2')
     
@@ -22,13 +29,25 @@ def initialize_system():
     with open("data/bank_metadata.pkl", "rb") as f:
         metadata = pickle.load(f)
         
-    print("Loading Qwen2.5-3B-Instruct... This may take a moment.")
+    print("Loading Qwen2.5-3B-Instruct in 4-bit... This may take a moment.")
     model_id = "Qwen/Qwen2.5-3B-Instruct"
     tokenizer = AutoTokenizer.from_pretrained(model_id)
-    model = AutoModelForCausalLM.from_pretrained(
-        model_id, torch_dtype=torch.float16, device_map="auto"
-    )
     
+    # 1. Define the exact 4-bit quantization parameters
+    bnb_config = BitsAndBytesConfig(
+        load_in_4bit=True,
+        bnb_4bit_use_double_quant=True,       # Saves even more memory
+        bnb_4bit_quant_type="nf4",            # Standard format for weights
+        bnb_4bit_compute_dtype=torch.float16  # Computes in float16 for speed
+    )
+
+    # 2. Pass the config to the model loader
+    model = AutoModelForCausalLM.from_pretrained(
+        model_id, 
+        device_map="auto",
+        quantization_config=bnb_config
+    )
+
     llm_pipeline = pipeline(
         "text-generation", model=model, tokenizer=tokenizer,
         max_new_tokens=512, temperature=0.2, repetition_penalty=1.1

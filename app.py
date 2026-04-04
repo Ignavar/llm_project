@@ -6,9 +6,6 @@ import pickle
 # Import our backend logic
 import rag_pipeline
 
-# Boot up the LLM and DB when the app starts
-print("Booting up backend systems...")
-rag_pipeline.initialize_system()
 
 def chat_function(message, history):
     """Passes the user message to the RAG backend."""
@@ -82,5 +79,9 @@ with gr.Blocks(title="NUST Bank Support", theme=gr.themes.Soft()) as demo:
             )
 
 if __name__ == "__main__":
+    # Boot up the LLM and DB when the app starts
+    print("Booting up backend systems...")
+    rag_pipeline.initialize_system()
+
     # Launch the web application
     demo.launch()
