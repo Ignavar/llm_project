@@ -1,6 +1,10 @@
 import json
 import streamlit as st
+import faiss
+import pickle
+import numpy as np
 
+# Import your custom UI modules
 from theme_config import get_theme
 from styles import build_css
 import components as ui
@@ -157,6 +161,7 @@ apply_global_theme_overrides(theme, st.session_state.dark_mode)
 @st.cache_resource
 def load_rag():
     if RAG_AVAILABLE:
+        print("Booting up backend systems...")
         rag_pipeline.initialize_system()
     return RAG_AVAILABLE
 
@@ -187,8 +192,33 @@ with st.sidebar:
             try:
                 new_data = json.load(uploaded_file)
                 if RAG_AVAILABLE:
-                    pass
-                st.success("Knowledge base updated.")
+                    new_chunks = []
+                    # Parse the JSON layout
+                    for category in new_data.get("categories", []):
+                        cat_name = category.get("category", "General")
+                        for qa in category.get("questions", []):
+                            chunk_text = f"Category: {cat_name} | Question: {qa['question']} | Answer: {qa['answer']}"
+                            new_chunks.append({"source_sheet": "Dynamic JSON Upload", "content": chunk_text})
+                    
+                    if new_chunks:
+                        # Generate embeddings via the backend embedder
+                        texts = [chunk['content'] for chunk in new_chunks]
+                        new_embeddings = rag_pipeline.embedder.encode(texts).astype('float32')
+                        
+                        # Update the FAISS index and metadata
+                        rag_pipeline.index.add(new_embeddings)
+                        rag_pipeline.metadata.extend(new_chunks)
+                        
+                        # Save the updated knowledge base to disk
+                        faiss.write_index(rag_pipeline.index, "data/bank_knowledge.index")
+                        with open("data/bank_metadata.pkl", "wb") as f:
+                            pickle.dump(rag_pipeline.metadata, f)
+                            
+                        st.success(f"Successfully processed and indexed {len(new_chunks)} new records!")
+                    else:
+                        st.warning("No valid QA pairs found in the JSON.")
+                else:
+                    st.success("Knowledge base updated (Dev Mode).")
             except Exception as exc:
                 st.error(f"Upload failed: {exc}")
         else:
@@ -202,12 +232,12 @@ with st.sidebar:
 
     st.markdown(
         f"""
-        <div style='margin-top:2rem; padding-top:1rem;
-        border-top:1px solid {theme['outline_variant']}33;
-        font-family:{theme['font_label']};
-        font-size:0.68rem;
-        color:{theme['on_surface_variant']};
-        text-transform:uppercase;
+        <div style='margin-top:2rem; padding-top:1rem; 
+        border-top:1px solid {theme['outline_variant']}33; 
+        font-family:{theme['font_label']}; 
+        font-size:0.68rem; 
+        color:{theme['on_surface_variant']}; 
+        text-transform:uppercase; 
         letter-spacing:0.08em;'>
         NUST Bank · Internal Tool<br>Theme: {theme['name']}
         </div>
@@ -244,7 +274,7 @@ if (
     st.session_state.messages
     and st.session_state.messages[-1]["role"] == "user"
 ):
-    with st.spinner("Thinking…"):
+    with st.spinner("Searching bank records..."):
         last_query = st.session_state.messages[-1]["content"]
 
         if RAG_AVAILABLE:
