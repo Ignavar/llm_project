@@ -1,9 +1,4 @@
 # components.py
-# ─────────────────────────────────────────────────────────────────────────────
-# Pure-HTML component helpers for the bank assistant UI.
-# Each function returns an HTML string; render with st.markdown(…, unsafe_allow_html=True)
-# ─────────────────────────────────────────────────────────────────────────────
-
 import html
 
 
@@ -17,21 +12,22 @@ def page_header() -> str:
     """
 
 
+# ✅ USER MESSAGE (RIGHT SIDE)
 def user_bubble(content: str) -> str:
     safe = html.escape(content)
     return f"""
     <div class="bubble-row user">
-        <div class="avatar user-av">U</div>
         <div class="bubble user-bubble">
             <div class="bubble-meta">You</div>
             {safe}
         </div>
+        <div class="avatar user-av">U</div>
     </div>
     """
 
 
+# ✅ BOT MESSAGE (LEFT SIDE)
 def bot_bubble(content: str) -> str:
-    # content may include markdown rendered by Streamlit, so we don't escape it
     return f"""
     <div class="bubble-row bot">
         <div class="avatar bot-av">AI</div>

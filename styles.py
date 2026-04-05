@@ -48,12 +48,13 @@ def build_css(t: dict, dark_mode: bool) -> str:
 
         --cta-gradient: {cta_gradient};
         --ghost-border: {ghost_border};
+        --shadow-float: {t['shadow_float']};
     }}
 
     /* ───────── BASE ───────── */
     html, body, .stApp {{
-        background-color: var(--surface, #ffffff) !important;
-        color: var(--on-surface, #000000) !important;
+        background-color: var(--surface) !important;
+        color: var(--on-surface) !important;
         font-family: var(--font-body);
     }}
 
@@ -63,12 +64,12 @@ def build_css(t: dict, dark_mode: bool) -> str:
 
     /* ───────── SIDEBAR ───────── */
     [data-testid="stSidebar"] {{
-        background-color: var(--surface-low, #f5f5f5) !important;
+        background-color: var(--surface-low) !important;
     }}
 
     [data-testid="stSidebar"] button {{
-        background-color: var(--surface-mid, #eeeeee) !important;
-        color: var(--on-surface, #000000) !important;
+        background-color: var(--surface-mid) !important;
+        color: var(--on-surface) !important;
         border: var(--ghost-border) !important;
         border-radius: var(--radius-card) !important;
         font-family: var(--font-label) !important;
@@ -76,30 +77,19 @@ def build_css(t: dict, dark_mode: bool) -> str:
     }}
 
     [data-testid="stSidebar"] button:hover {{
-        background-color: var(--surface-high, #dddddd) !important;
+        background-color: var(--surface-high) !important;
         color: var(--primary) !important;
     }}
 
-    /* ───────── PRIMARY BUTTON ───────── */
-    .update-btn button {{
-        background: var(--cta-gradient) !important;
-        color: var(--on-primary) !important;
-        border: none !important;
-    }}
-
-    /* ───────── CHAT INPUT (FIXED SINGLE BACKGROUND) ───────── */
+    /* ───────── CHAT INPUT ───────── */
 
     div[data-testid="stChatInput"] {{
-        background-color: var(--surface-mid, #eeeeee) !important;
-        border: 2px solid var(--outline-variant, #999999) !important;
+        background-color: var(--surface-mid) !important;
+        border: 2px solid var(--outline-variant) !important;
         border-radius: var(--radius-card) !important;
     }}
 
-    /* Remove all inner backgrounds */
-    div[data-testid="stChatInput"] div {{
-        background-color: transparent !important;
-    }}
-
+    div[data-testid="stChatInput"] div,
     div[data-baseweb="textarea"],
     div[data-baseweb="base-input"] {{
         background-color: transparent !important;
@@ -109,67 +99,27 @@ def build_css(t: dict, dark_mode: bool) -> str:
 
     div[data-testid="stChatInput"] textarea {{
         background-color: transparent !important;
-        color: var(--on-surface, #000000) !important;
+        color: var(--on-surface) !important;
         border: none !important;
         outline: none !important;
-        box-shadow: none !important;
     }}
 
-    div[data-testid="stChatInput"] textarea:focus {{
-        background-color: transparent !important;
-        outline: none !important;
-        box-shadow: none !important;
-    }}
-
-    /* Send button */
     div[data-testid="stChatInput"] button {{
         background: var(--cta-gradient) !important;
         color: var(--on-primary) !important;
         border: none !important;
     }}
 
-    /* ───────── FILE UPLOADER (FIXED SINGLE STYLE) ───────── */
-
-    [data-testid="stFileUploader"] {{
-        background-color: var(--surface-mid, #eeeeee) !important;
-        border: var(--ghost-border) !important;
-        border-radius: var(--radius-card) !important;
-    }}
-
-    [data-testid="stFileUploader"] > div,
-    [data-testid="stFileUploaderDropzone"] {{
-        background-color: var(--surface-mid, #eeeeee) !important;
-        border: none !important;
-    }}
-
-    [data-testid="stFileUploader"] button {{
-        background: var(--cta-gradient) !important;
-        color: var(--on-primary) !important;
-        border: none !important;
-        border-radius: var(--radius-card) !important;
-    }}
-
-    [data-testid="stFileUploader"] button:hover {{
-        background: var(--cta-gradient) !important;
-        filter: brightness(1.05);
-        color: var(--on-primary) !important;
-    }}
-
-    /* Prevent nested hover layers */
-    [data-testid="stFileUploader"] * {{
-        background-color: inherit !important;
-    }}
-
-    /* ───────── REMOVE WHITE CONTAINERS ───────── */
+    /* ───────── CLEAN BACKGROUND ───────── */
 
     .stApp,
     .main,
     .block-container {{
-        background-color: var(--surface, #ffffff) !important;
+        background-color: var(--surface) !important;
     }}
 
     section[data-testid="stMain"] > div {{
-        background-color: var(--surface, #ffffff) !important;
+        background-color: var(--surface) !important;
     }}
 
     div[data-testid="stVerticalBlock"],
@@ -177,12 +127,120 @@ def build_css(t: dict, dark_mode: bool) -> str:
         background-color: transparent !important;
     }}
 
-    /* ───────── FIX BOTTOM CHAT CONTAINER ───────── */
+    /* ───────── CHATGPT STYLE CHAT UI ───────── */
+
+    .chat-wrapper {{
+        display: flex;
+        flex-direction: column;
+        gap: 1.2rem;
+        max-width: 900px;
+        margin: 2rem auto;
+        padding-bottom: 120px;
+    }}
+
+    .bubble-row {{
+        display: flex;
+        align-items: flex-end;
+        gap: 0.6rem;
+    }}
+
+    .bubble-row.user {{
+        justify-content: flex-end;
+    }}
+
+    .bubble-row.bot {{
+        justify-content: flex-start;
+    }}
+
+    .avatar {{
+        width: 34px;
+        height: 34px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 0.75rem;
+        font-weight: 600;
+    }}
+
+    .user-av {{
+        background: var(--primary);
+        color: var(--on-primary);
+    }}
+
+    .bot-av {{
+        background: var(--surface-high);
+        color: var(--on-surface);
+    }}
+
+    .bubble {{
+        max-width: 70%;
+        padding: 0.75rem 1rem;
+        border-radius: 16px;
+        font-size: 0.95rem;
+        line-height: 1.5;
+        box-shadow: var(--shadow-float);
+    }}
+
+    .user-bubble {{
+        background: var(--primary);
+        color: var(--on-primary);
+        border-bottom-right-radius: 4px;
+    }}
+
+    .bot-bubble {{
+        background: var(--surface-high);
+        color: var(--on-surface);
+        border-bottom-left-radius: 4px;
+    }}
+
+    .bubble-meta {{
+        font-size: 0.65rem;
+        opacity: 0.6;
+        margin-bottom: 4px;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+    }}
+
+    /* ───────── FIX STREAMLIT COMPONENT COLORS ───────── */
+
+    [data-testid="stFileUploaderDropzone"] {{
+        background-color: var(--surface-mid) !important;
+        border: 1px solid var(--outline-variant) !important;
+    }}
+
+    [data-testid="stFileUploaderDropzone"] * {{
+        background-color: transparent !important;
+    }}
+
+    [data-testid="stFileUploader"] button {{
+        background: var(--cta-gradient) !important;
+        color: var(--on-primary) !important;
+        border: none !important;
+    }}
 
     div[data-testid="stBottomBlockContainer"],
     div[data-testid="stBottomBlockContainer"] > div,
     div[data-testid="stBottomBlockContainer"] div {{
-        background-color: var(--surface, #ffffff) !important;
+        background-color: var(--surface) !important;
+    }}
+
+    div[data-testid="stChatInput"] {{
+        background-color: var(--surface-mid) !important;
+        border: 2px solid var(--outline-variant) !important;
+    }}
+
+    div[data-testid="stChatInput"] * {{
+        background-color: transparent !important;
+    }}
+
+    textarea[data-testid="stChatInputTextArea"] {{
+        color: var(--on-surface) !important;
+    }}
+
+    button[data-testid="stChatInputSubmitButton"] {{
+        background: var(--cta-gradient) !important;
+        color: var(--on-primary) !important;
     }}
 
     </style>
